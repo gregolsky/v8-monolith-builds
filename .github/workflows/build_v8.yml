@@ -77,11 +77,13 @@ jobs:
           - os: ubuntu-latest
             name: linux
             arch: x64
+            platform: linux-x64
             lib_name: libv8_monolith.a
           
           - os: windows-latest
             name: windows
             arch: x64
+            platform: windows-x64
             lib_name: v8_monolith.lib
           
 #           - os: macOS-latest
@@ -130,8 +132,8 @@ jobs:
         shell: pwsh
         run: |
           Set-Location -Path v8
-          python tools/dev/v8gen.py ${{ matrix.config.arch }}.release
-          Copy-Item "../platforms/${{ matrix.config.name }}_${{ matrix.config.arch }}/args.gn" -Destination "./out.gn/${{ matrix.config.arch }}.release/args.gn" -force
+          python tools/dev/v8gen.py "${{ matrix.config.platform }}.release"
+          Copy-Item "../platforms/${{ matrix.config.platform }}/args.gn" -Destination "./out.gn/${{ matrix.config.platform }}.release/args.gn" -force
           gn gen out.gn/${{ matrix.config.arch }}.release
           Get-Content ./out.gn/${{ matrix.config.arch }}.release/args.gn | Write-Output
           ninja -C out.gn/${{ matrix.config.arch }}.release
@@ -140,11 +142,10 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType directory -Path ./out/
-          Copy-Item -Path ./v8/out.gn/x64.release/obj/${{ matrix.config.lib_name }} -Destination ./out/${{ matrix.config.name }}_${{ matrix.config.arch }}_${{ matrix.config.lib_name }}
-          If ($IsLinux -or $IsMacOS) { Copy-Item -Path ./v8/out.gn/x64.release/d8 -Destination ./out/${{ matrix.config.name }}_${{ matrix.config.arch }}_d8 }
-          If ($IsWindows) { Copy-Item -Path ./v8/out.gn/x64.release/d8.exe -Destination ./out/${{ matrix.config.name }}_${{ matrix.config.arch }}_d8.exe }
+          Compress-Archive -Path ./v8/out.gn/${{ matrix.config.platform }}.release -DestinationPath "v8-out-${{ matrix.config.platform }}.zip"
+          Copy-Item -Path "v8-out-${{ matrix.config.platform }}.zip" -Destination ./out/ 
       
-      - name: Release monolithic V8 lib & d8
+      - name: Add GitHub release
         uses: softprops/action-gh-release@v1
         with:
           files: ./out/*
