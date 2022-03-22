@@ -67,7 +67,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build:
-    name: ${{ matrix.config.name }}_${{ matrix.config.arch }}
+    name: ${{ matrix.config.platform }}
     if: "!startsWith(github.event.head_commit.message, '[Skip]')"
     runs-on: ${{ matrix.config.os }}
     strategy:
@@ -132,8 +132,8 @@ jobs:
         shell: pwsh
         run: |
           Set-Location -Path v8
-          python tools/dev/v8gen.py "${{ matrix.config.platform }}.release"
-          Copy-Item "../platforms/${{ matrix.config.platform }}/args.gn" -Destination "./out.gn/${{ matrix.config.platform }}.release/args.gn" -force
+          python tools/dev/v8gen.py "${{ matrix.config.arch }}.release"
+          Copy-Item "../platforms/${{ matrix.config.platform }}.release/args.gn" -Destination "./out.gn/${{ matrix.config.arch }}.release/args.gn" -force
           gn gen out.gn/${{ matrix.config.arch }}.release
           Get-Content ./out.gn/${{ matrix.config.arch }}.release/args.gn | Write-Output
           ninja -C out.gn/${{ matrix.config.arch }}.release
@@ -142,7 +142,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType directory -Path ./out/
-          Compress-Archive -Path ./v8/out.gn/${{ matrix.config.platform }}.release -DestinationPath "v8-out-${{ matrix.config.platform }}.zip"
+          Compress-Archive -Path ./v8/out.gn/${{ matrix.config.arch }}.release -DestinationPath "v8-out-${{ matrix.config.platform }}.zip"
           Copy-Item -Path "v8-out-${{ matrix.config.platform }}.zip" -Destination ./out/ 
       
       - name: Add GitHub release
